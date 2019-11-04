@@ -1,4 +1,5 @@
 #include "types.h"
+#include "pstat.h"
 #include "defs.h"
 #include "param.h"
 #include "memlayout.h"
@@ -220,6 +221,13 @@ fork(void)
   np->state = RUNNABLE;
 
   release(&ptable.lock);
+  
+  np->num_run = 0;
+  #ifdef MLFQ
+  np->current_queue = 2;
+  for(int queue_num = 0; queue_num < 5; queue_num++)
+    np->ticks[queue_num] = 0;
+  #endif
 
   return pid;
 }
@@ -392,6 +400,7 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->num_run++;  
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
@@ -582,4 +591,22 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int
+getpinfo(struct proc_stat* status, int pid) {
+  struct proc* p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->pid == pid) {
+      status->pid = p->pid;
+      status->num_run = p->num_run;
+      status->runtime = p->rtime;
+      #ifdef MLFQ
+      status->current_queue = p->current_queue;
+      for(int q_num=0; q_num<5; q_num++) status->ticks[q_num] = p->ticks[q_num];
+      #endif
+      return 1;
+    }
+  }
+  return 0;
 }

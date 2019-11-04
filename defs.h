@@ -10,6 +10,10 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+// pinfo.c
+struct proc_stat;
+int             getpinfo(struct proc_stat *, int);
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);

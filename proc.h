@@ -1,6 +1,6 @@
-// Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
+// Per-CPU state
   struct context *scheduler;   // swtch() here to enter scheduler
   struct taskstate ts;         // Used by x86 to find stack for interrupt
   struct segdesc gdt[NSEGS];   // x86 global descriptor table
@@ -49,9 +49,14 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  uint ctime;                   // ticks at the time of process creation
-  uint etime;                   // Process end time (ticks at end time - ctime)
-  uint rtime;                   // Process rtime
+  uint ctime;                  // ticks at the time of process creation
+  uint etime;                  // Process end time (ticks at end time - ctime)
+  uint rtime;                  // Total runtime of the process
+  int num_run;                 // Number of times the process is run
+  #ifdef MLFQ                   
+  int current_queue;           
+  int ticks[5];
+  #endif              
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -59,5 +64,3 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
-
-void update_rtime(void);

@@ -17,17 +17,17 @@ printf(int fd, char *s, ...)
 void
 foo()
 {
-  volatile int i, j = 0;
-  for (i=0;i<1000;i++) {
-     printf(2, "wait test %d\n",i);
-    j++;
-  }
+  // volatile int i, j = 0;
+  // for (i=0;i<1000;i++) {
+  //    printf(2, "wait test %d\n",i);
+  //   j++;
+  // }
   sleep(20);
-  for (i=0;i<1000;i++) {
-     printf(2, "wait test %d\n",i);
-    j++;
-  }
-  printf(2, "%d", j);
+  // for (i=0;i<1000;i++) {
+  //    printf(2, "wait test %d\n",i);
+  //   j++;
+  // }
+  // printf(2, "%d", j);
 }
 
 void
@@ -37,7 +37,6 @@ waittest(void)
   int rTime;
   int pid;
   printf(1, "wait test\n");
-
 
     pid = fork();
     if(pid == 0)
@@ -51,7 +50,7 @@ waittest(void)
 
 }
 int
-main(void)
+main()
 {
   waittest();
   exit();

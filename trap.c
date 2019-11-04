@@ -1,4 +1,5 @@
 #include "types.h"
+#include "pstat.h"
 #include "defs.h"
 #include "param.h"
 #include "memlayout.h"
@@ -8,9 +9,17 @@
 #include "traps.h"
 #include "spinlock.h"
 
-void update_rtime(void) {
+void 
+update_rtime(void) 
+{
   struct proc *p = myproc();
-  if(p && p->state == RUNNING) p->rtime++;
+  if(p && p->state == RUNNING) 
+  {
+    p->rtime++;
+    #ifdef MLFQ
+    p->ticks[p->current_queue]++;
+    #endif
+  }
   return;
 }
 

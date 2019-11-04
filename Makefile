@@ -182,6 +182,9 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_waittest\
+	_getpinfotest\
+	_testingloop\
+	_time\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -252,7 +255,7 @@ EXTRA=\
 	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
 	printf.c umalloc.c\
-	waittest.c\
+	waittest.c getpinfotest.c testingloop.c time.c\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
 

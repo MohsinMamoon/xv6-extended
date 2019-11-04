@@ -98,3 +98,12 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_getpinfo(void) {
+  struct proc_stat *status;
+  int pid;
+  if(argptr(0, (void *)&status, sizeof(status)) != 0) return -1;
+  if(argint(1, &pid) != 0) return -1;
+  return getpinfo(status, pid);
+}
