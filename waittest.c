@@ -18,12 +18,12 @@ void
 foo()
 {
   volatile int i, j = 0;
-  for (i=0;i<2000;i++) {
+  for (i=0;i<1000;i++) {
      printf(2, "wait test %d\n",i);
     j++;
   }
   sleep(20);
-  for (i=0;i<2000;i++) {
+  for (i=0;i<1000;i++) {
      printf(2, "wait test %d\n",i);
     j++;
   }
@@ -45,7 +45,7 @@ waittest(void)
       foo();
       exit();      
     }
-    waitx(&rTime,&wTime);
+    waitx(&wTime,&rTime);
      printf(1, "hi \n");
     printf(1, "wTime: %d rTime: %d \n",wTime,rTime);
 

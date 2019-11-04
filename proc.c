@@ -266,6 +266,7 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+  curproc->etime = ticks;
   sched();
   panic("zombie exit");
 }
@@ -333,11 +334,8 @@ waitx(int *wtime, int *rtime)
       havekids = 1;
       if(p->state == ZOMBIE){
         // Found one.
-        acquire(&tickslock);
-        p->etime = ticks - p->ctime;
-        release(&tickslock);
         *rtime = p->rtime;
-        *wtime = p->etime - p->rtime;
+        *wtime = p->etime - p->ctime - p->rtime;
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
@@ -537,6 +535,7 @@ kill(int pid)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
       p->killed = 1;
+      p->etime = ticks;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)
         p->state = RUNNABLE;
@@ -583,15 +582,4 @@ procdump(void)
     }
     cprintf("\n");
   }
-}
-
-void
-update_rtime(void) {
-  struct proc* p;
-  acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-    if(p->state == RUNNING) p->rtime++;
-  }
-  release(&ptable.lock);
-  return;
 }
