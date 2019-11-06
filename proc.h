@@ -53,6 +53,9 @@ struct proc {
   uint etime;                  // Process end time (ticks at end time - ctime)
   uint rtime;                  // Total runtime of the process
   int num_run;                 // Number of times the process is run
+  #ifdef PBS
+  int prior;                   // Priority of the process
+  #endif
   #ifdef MLFQ                   
   int current_queue;           
   int ticks[5];

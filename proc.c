@@ -115,6 +115,10 @@ found:
 
   p->ctime = ticks;
   p->rtime = p->etime = 0;
+  #ifdef PBS
+  if(p->pid == 2) p->prior = 0;
+  else p->prior = 60;
+  #endif
 
   return p;
 }
@@ -390,6 +394,8 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    #ifdef DEFAULT
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
@@ -409,6 +415,77 @@ scheduler(void)
       // It should have changed its p->state before coming back.
       c->proc = 0;
     }
+    #endif
+
+    #ifdef FCFS
+    struct proc *FS = 0;
+    
+    // Find the process with min ctime
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE) continue;
+
+      if(FS != 0) {
+        if(p->ctime < FS->ctime) FS = p;
+      }
+      else {
+        FS = p;
+      }
+    }
+    
+    if(FS != 0 && FS->state == RUNNABLE) {
+      p = FS;
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+      p->num_run++;  
+
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+    }
+    #endif
+
+    #ifdef PBS
+    int min_prior = 100;
+
+    // Find the least value of prior (Highest priority currently)
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if(p->state != RUNNABLE) continue;
+
+      if(p->prior < min_prior) min_prior = p->prior;
+    }
+
+    // Round robin for process with highest priority.
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if(p->prior != min_prior || p->state != RUNNABLE) continue; // Priority doesn't match the highest one;
+      
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+      p->num_run++;  
+
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+    }
+    #endif
+
+    // #ifdef MLFQ
+
+    // #endif
+
     release(&ptable.lock);
 
   }
@@ -560,22 +637,59 @@ kill(int pid)
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
+// void
+// procdump(void)
+// {
+  // static char *states[] = {
+  // [UNUSED]    "unused",
+  // [EMBRYO]    "embryo",
+  // [SLEEPING]  "sleep ",
+  // [RUNNABLE]  "runble",
+  // [RUNNING]   "run   ",
+  // [ZOMBIE]    "zombie"
+  // };
+  // int i;
+  // struct proc *p;
+  // char *state;
+  // uint pc[10];
+// 
+  // for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    // if(p->state == UNUSED)
+      // continue;
+    // if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
+      // state = states[p->state];
+    // else
+      // state = "???";
+    // cprintf("%d %s %s", p->pid, state, p->name);
+    // if(p->state == SLEEPING){
+      // getcallerpcs((uint*)p->context->ebp+2, pc);
+      // for(i=0; i<10 && pc[i] != 0; i++)
+        // cprintf(" %p", pc[i]);
+    // }
+    // cprintf("\n");
+  // }
+// }
+// 
 void
 procdump(void)
 {
   static char *states[] = {
-  [UNUSED]    "unused",
-  [EMBRYO]    "embryo",
-  [SLEEPING]  "sleep ",
-  [RUNNABLE]  "runble",
-  [RUNNING]   "run   ",
-  [ZOMBIE]    "zombie"
+  [UNUSED]    "Unused   ",
+  [EMBRYO]    "Embryo   ",
+  [SLEEPING]  "Sleeping ",
+  [RUNNABLE]  "Runnable ",
+  [RUNNING]   "Running  ",
+  [ZOMBIE]    "Zombie   "
   };
-  int i;
+  // int i;
   struct proc *p;
   char *state;
-  uint pc[10];
-
+  // uint pc[10];
+  cprintf("\nPID\tState    \tName");
+  #ifdef PBS
+  cprintf("\tPriority");
+  #endif
+  cprintf("\n");
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state == UNUSED)
       continue;
@@ -583,12 +697,15 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    cprintf("%d %s %s", p->pid, state, p->name);
-    if(p->state == SLEEPING){
-      getcallerpcs((uint*)p->context->ebp+2, pc);
-      for(i=0; i<10 && pc[i] != 0; i++)
-        cprintf(" %p", pc[i]);
-    }
+    cprintf("%d\t%s\t%s", p->pid, state, p->name);
+    #ifdef PBS
+    cprintf("\t%d", p->prior);
+    #endif
+    // if(p->state == SLEEPING){
+      // getcallerpcs((uint*)p->context->ebp+2, pc);
+      // for(i=0; i<10 && pc[i] != 0; i++)
+        // cprintf(" %p", pc[i]);
+    // }
     cprintf("\n");
   }
 }
@@ -601,6 +718,8 @@ getpinfo(struct proc_stat* status, int pid) {
       status->pid = p->pid;
       status->num_run = p->num_run;
       status->runtime = p->rtime;
+      status->ctime = p->ctime;
+      for(int namee = 0; namee < 16; namee++) status->name[namee] = p->name[namee];
       #ifdef MLFQ
       status->current_queue = p->current_queue;
       for(int q_num=0; q_num<5; q_num++) status->ticks[q_num] = p->ticks[q_num];
@@ -608,5 +727,25 @@ getpinfo(struct proc_stat* status, int pid) {
       return 1;
     }
   }
-  return 0;
+  return -1;
+}
+
+int set_priority(int prior, int pid) {
+  #ifndef PBS
+  return -1;
+  #endif
+
+  #ifdef PBS
+  struct proc* p;
+  int old_prior;
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->pid == pid) {
+      old_prior = p->prior;
+      p->prior = prior;
+      return old_prior;
+    }
+  }
+  return -1;
+  #endif
 }

@@ -107,3 +107,12 @@ sys_getpinfo(void) {
   if(argint(1, &pid) != 0) return -1;
   return getpinfo(status, pid);
 }
+
+int
+sys_set_priority(void) {
+  int prior, pid;
+  if(argint(0, &prior) != 0 || prior > 100 || prior < 0) return -1;
+  if(argint(1, &pid) != 0) return -1;
+  return set_priority(prior, pid);
+}
+  

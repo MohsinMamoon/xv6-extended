@@ -9,9 +9,10 @@ int main(int argc, char *argv[]) {
     }
     else {
         int x = atoi(argv[1]);
-        printf(2, "Printing info for pid %d:\n", x);
+        printf(2, "Printing info for pid %d [", x);
         struct proc_stat info;
         if(getpinfo(&info, x) == 1) {
+            printf(2, "%s]:\n", info.name);
             printf(2, "pid: %d\nruntime: %d\nnum_run: %d\n", info.pid, info.runtime, info.num_run);
         }
         else {
