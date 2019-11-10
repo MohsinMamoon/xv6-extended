@@ -17,17 +17,17 @@ printf(int fd, char *s, ...)
 void
 foo()
 {
-  // volatile int i, j = 0;
-  // for (i=0;i<1000;i++) {
-  //    printf(2, "wait test %d\n",i);
-  //   j++;
-  // }
-  sleep(20);
-  // for (i=0;i<1000;i++) {
-  //    printf(2, "wait test %d\n",i);
-  //   j++;
-  // }
-  // printf(2, "%d", j);
+  volatile int i, j = 0;
+  for (i=0;i<1000;i++) {
+     printf(2, "wait test %d\n",i);
+    j++;
+  }
+  // sleep(40);
+  for (i=0;i<1000;i++) {
+     printf(2, "wait test %d\n",i);
+    j++;
+  }
+  printf(2, "%d", j);
 }
 
 void

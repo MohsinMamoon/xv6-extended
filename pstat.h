@@ -3,6 +3,7 @@ struct proc_stat {
   int runtime;
   int num_run;
   int ctime;
+  int wtime;
   char name[16];
   #ifdef MLFQ
   int current_queue;

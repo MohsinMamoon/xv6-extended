@@ -18,6 +18,7 @@ update_rtime(void)
     p->rtime++;
     #ifdef MLFQ
     p->ticks[p->current_queue]++;
+    p->t_slice++;
     #endif
   }
   return;
@@ -66,10 +67,10 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
-      update_rtime();
       wakeup(&ticks);
       release(&tickslock);
     }
+    update_rtime();
     lapiceoi();
     break;
   case T_IRQ0 + IRQ_IDE:
@@ -119,9 +120,38 @@ trap(struct trapframe *tf)
   // Force process to give up CPU on clock tick if scheduling algo is not FCFS. 
   // If interrupts were on while locks held, would need to check nlock.
   #ifndef FCFS
-  if(myproc() && myproc()->state == RUNNING &&
-     tf->trapno == T_IRQ0+IRQ_TIMER)
+  struct proc *p = myproc();
+  if(p && p->state == RUNNING &&
+     tf->trapno == T_IRQ0+IRQ_TIMER) {
+    // #ifndef MLFQ
     yield();
+    // #endif
+    // #ifdef MLFQ
+    // int c_q; // Current time_slice for the process
+    // if(p->current_queue != 4) {  
+    //   switch(p->current_queue) {
+    //     default: 
+    //     case 0:
+    //         c_q = QUANTA0;
+    //         break;
+    //     case 1: 
+    //         c_q = QUANTA1;
+    //         break;
+    //     case 2: 
+    //         c_q = QUANTA2;
+    //         break;
+    //     case 3:
+    //         c_q = QUANTA3;
+    //         break;
+    //     case 4:
+    //         c_q = QUANTA4;
+    //         break;
+    //   }
+    //   if(p->t_slice >= c_q) yield();
+    // }
+    // else yield();
+    // #endif
+  }
   #endif
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)

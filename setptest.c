@@ -5,6 +5,7 @@
 int main(int argc, char *argv[]) {
     if(argc <= 2) {
         printf(2, "Too few arguments!\n");
+        printf(2, "Usage: setptest <new_prior> <pid>\n");
     }
     else {
         int prior = atoi(argv[1]);

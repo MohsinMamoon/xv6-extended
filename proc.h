@@ -1,3 +1,10 @@
+
+#define QUANTA0 1
+#define QUANTA1 2
+#define QUANTA2 4
+#define QUANTA3 8
+#define QUANTA4 16
+
 struct cpu {
   uchar apicid;                // Local APIC ID
 // Per-CPU state
@@ -56,9 +63,11 @@ struct proc {
   #ifdef PBS
   int prior;                   // Priority of the process
   #endif
-  #ifdef MLFQ                   
-  int current_queue;           
-  int ticks[5];
+  #ifdef MLFQ         
+  int l_access;                // Time when the process was last accessed
+  int t_slice;                 // Time spent on current queue (changes after each CPU burst)          
+  int current_queue;           // Current queue of the process
+  int ticks[5];                // Total ticks in each queue
   #endif              
 };
 
